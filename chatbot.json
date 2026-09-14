@@ -1,0 +1,204 @@
+{
+  "name": "chatbot",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "598cdc9c-beae-4c34-b767-19380240f4c2",
+      "name": "When chat message received",
+      "webhookId": "543df6e4-6625-4800-b8be-4cf325a1beac"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a source-grounded RAG research assistant. Use the connected Supabase vector-search tool whenever the user asks about the indexed document. Base factual answers only on retrieved context; do not use outside knowledge to fill missing details. If the retrieved context is insufficient, say \"I don't know based on the indexed document.\" Be concise but explanatory. When you answer from retrieved context, end with a short \"Source\" line using the document metadata/title when available. For greetings or questions about how to use the assistant, you may respond without retrieval."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "5eafc10f-b40b-4e79-ab1e-b3d6a3c656f2",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        80,
+        208
+      ],
+      "id": "9f53b8e5-63a4-4719-94e1-8b52dacc4b50",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "lJho484PHwloVqkf",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search the indexed research paper for passages relevant to the user question. Use this before answering factual questions about the document. Returned chunks include source metadata.",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {
+          "queryName": "match_documents"
+        },
+        "topK": 6
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        480,
+        288
+      ],
+      "id": "8151edcf-6757-45b4-b989-264af8f5771d",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "kjNYaN5EaNYeGzTS",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsHuggingFaceInference",
+      "typeVersion": 1,
+      "position": [
+        416,
+        528
+      ],
+      "id": "ea9152cc-6e52-4283-8ec3-b849bab80a5c",
+      "name": "Embeddings HuggingFace Inference",
+      "credentials": {
+        "huggingFaceApi": {
+          "id": "HyqTRFy4PlyQJO8F",
+          "name": "HuggingFaceApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        208
+      ],
+      "id": "fb0eac33-e85e-4c6b-a86d-e987c72b208d",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "content": "## Grounded RAG chat\n1. Chat message enters the AI Agent.\n2. The agent searches Supabase before answering document questions.\n3. Groq generates an answer constrained to retrieved context.\n4. Simple Memory keeps short conversational context.\n\n**Tip:** Re-select your Groq, Supabase, and Hugging Face credentials after import.",
+        "height": 300,
+        "width": 420,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -520,
+        -420
+      ],
+      "id": "94f49c37-d6b4-41c2-a34d-c1f5c2642b2e",
+      "name": "How this workflow works"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings HuggingFace Inference": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "40336085-4b24-4b72-a094-d6076bf9ee26",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a9c307d84524f6e023f2acab4b78739b1e4cba24ffdf91f40cecd5c41cf89a4a"
+  },
+  "id": "AHZm8y93RAl1jyIX",
+  "tags": []
+}
